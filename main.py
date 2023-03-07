@@ -31,6 +31,7 @@ import wandb
 import logging
 import warnings
 import gc
+import copy
 
 # Load data class and DRNets
 # For detailed intro to DRNets see original paper by Schwab (2020)
@@ -162,7 +163,7 @@ for bias in tqdm(biases, desc="Iterating over biases", ncols=125):
                                 # Save new lowest error and save model
                                 if (temp_error < val_error):
                                     val_error = temp_error
-                                    model = temp
+                                    model = copy.deepcopy(temp)
                                         
                                 # Update pbar
                                 pbar.update(1)
@@ -232,7 +233,7 @@ for bias in tqdm(biases, desc="Iterating over biases", ncols=125):
                                 # Save new lowest error and save model
                                 if (temp_error < val_error):
                                     val_error = temp_error
-                                    model = temp
+                                    model = copy.deepcopy(temp)
                                         
                                 # Update pbar
                                 pbar.update(1)

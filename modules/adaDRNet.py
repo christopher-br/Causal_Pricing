@@ -5,6 +5,7 @@ import sys
 import numpy as np
 from tqdm import tqdm
 from scipy.integrate import romb
+from sklearn.neighbors import BallTree
 
 import torch
 import torch.nn as nn
@@ -182,7 +183,7 @@ class DRNet_Model(pl.LightningModule):
         self.trainer.fit(self, loader) 
 
         
-    def validateModel(self, dataset_val):
+    def validateModel_factual(self, dataset_val):
         """
         Get MSE on validation set
         """
@@ -215,6 +216,72 @@ class DRNet_Model(pl.LightningModule):
         
         # Return mse multiplied by number of head
         return val_mse*self.num_heads
+    
+    def validateModel(self, torchDataset):
+        """
+        Validates a BalNets model on a dataset, by calculating the MISE of predicted response to nearest neighbor response
+        
+        Parameters:
+            torchDataset (torchDataset): A torchDataset
+        """
+        # Get observations
+        x, y_true, d = torchDataset.get_data()
+        
+        # Initialize result arrays
+        mises = []
+        
+        # Save treatment strengths
+        samples_power_of_two = 4
+        num_integration_samples = 2 ** samples_power_of_two + 1
+        step_size = 0.999 / num_integration_samples
+        treatment_strengths = torch.linspace(np.finfo(float).eps, 0.999, num_integration_samples)
+        
+        # Get number of observations
+        num_test_obs = torchDataset.x.shape[0]
+        
+        # Get distances between obs
+        distance_tree = BallTree(torch.cat((x, d.reshape(-1,1)), dim=1), leaf_size=200)
+        
+        def get_nn_outcome(obs_id, xd, y_true, distance_tree):
+            """
+            Returns factual outcome of nearest neighbour to observation-dosage sample.
+            
+            Parameters:
+                obs_id (int): The ID to the combination of x and d
+                xd (torch.Tensor): A torch tensor of an observation with a number of dosages to evaluate
+                y_true (torch.Tensor): The factual outcomes of the observations in distance_tree (see below)
+                distance_tree (BallTree obj): A BallTree object trained on a dataset
+            """
+            # Get ID of nearest neighbour
+            nn_id = distance_tree.query(xd[[obs_id]], k=1)[1].item()
+            # Get outcome of nearest neighbour
+            nn_outcome = y_true[nn_id].detach().item()
+            
+            return nn_outcome
+            
+        # Start iterating
+        for obs_id in tqdm(range(num_test_obs), leave=False, desc="Validate model:", ncols=125):
+            # Get observation
+            observation = torchDataset.x[obs_id]
+            # Repeat observation
+            observations = observation.repeat(num_integration_samples, 1)
+            # Concat d
+            observations_d = torch.cat((observations, treatment_strengths.reshape(-1,1)), dim=1)
+            
+            # Predict outcomes
+            pred_outcomes = np.array(self.predictObservation(observations, treatment_strengths)).reshape(1,-1).squeeze()
+            
+            nn_true_outcomes = [get_nn_outcome(dose_id, observations_d, y_true, distance_tree) for dose_id in range(num_integration_samples)]
+            nn_true_outcomes = np.array(nn_true_outcomes)
+            
+            # Calculate MISE
+            mise = romb((pred_outcomes - nn_true_outcomes) ** 2, dx=step_size)
+            mises.append(mise)
+        
+        # Save mises as np array
+        mises = np.array(mises)
+        
+        return np.sqrt(np.mean(mises))
     
     
     def predictObservation(self, x, d):

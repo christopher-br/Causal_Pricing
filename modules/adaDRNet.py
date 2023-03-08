@@ -217,15 +217,15 @@ class DRNet_Model(pl.LightningModule):
         # Return mse multiplied by number of head
         return val_mse*self.num_heads
     
-    def validateModel(self, torchDataset):
+    def validateModel(self, dataset_val):
         """
-        Validates a BalNets model on a dataset, by calculating the MISE of predicted response to nearest neighbor response
+        Generate nn mise
+        """
+        # Generate torchDataset object
+        torchData = torchDataset(dataset_val)
         
-        Parameters:
-            torchDataset (torchDataset): A torchDataset
-        """
         # Get observations
-        x, y_true, d = torchDataset.get_data()
+        x, y_true, d = torchData.get_data()
         
         # Initialize result arrays
         mises = []
@@ -237,7 +237,7 @@ class DRNet_Model(pl.LightningModule):
         treatment_strengths = torch.linspace(np.finfo(float).eps, 0.999, num_integration_samples)
         
         # Get number of observations
-        num_test_obs = torchDataset.x.shape[0]
+        num_test_obs = torchData.x.shape[0]
         
         # Get distances between obs
         distance_tree = BallTree(torch.cat((x, d.reshape(-1,1)), dim=1), leaf_size=200)
@@ -260,9 +260,9 @@ class DRNet_Model(pl.LightningModule):
             return nn_outcome
             
         # Start iterating
-        for obs_id in tqdm(range(num_test_obs), leave=False, desc="Validate model:", ncols=125):
+        for obs_id in tqdm(range(num_test_obs), leave=False, desc="Validate model", ncols=125):
             # Get observation
-            observation = torchDataset.x[obs_id]
+            observation = torchData.x[obs_id]
             # Repeat observation
             observations = observation.repeat(num_integration_samples, 1)
             # Concat d

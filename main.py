@@ -18,6 +18,7 @@ import os
 
 # Save main run parameters
 n_iter = 10
+n_passes = 5000
 biases = [0.0, 2.5, 5.0, 7.5, 10.0, 15.0, 20.0]
 terminal_verbose = False
 log_results_locally = False
@@ -141,7 +142,7 @@ for bias in tqdm(biases, desc="Iterating over biases", ncols=125):
             for n_heads in [1]: # For basic MLP
                 for l_rate in [0.01, 0.1]:
                     for h_size in [64, 128]:
-                        for n_steps in [10000]:
+                        for n_steps in [n_passes]:
                             for n_layers in [2]:                                
                                 # Save config file
                                 config = dict()
@@ -211,7 +212,7 @@ for bias in tqdm(biases, desc="Iterating over biases", ncols=125):
             for n_heads in [5, 10]:
                 for l_rate in [0.01, 0.1]:
                     for h_size in [64, 128]:
-                        for n_steps in [10000]:
+                        for n_steps in [n_passes]:
                             for n_layers in [2]:                                
                                 # Save config file
                                 config = dict()

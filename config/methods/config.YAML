@@ -1,0 +1,37 @@
+LogReg:
+  penalty: [Null]
+  numIter: [100]
+
+RandomF:
+  criterion: ['gini']
+  numEstimators: [100,500]
+  maxDepth: [Null, 10]
+
+MLP:
+  learningRate: [0.01, 0.05]
+  batchSize: [64, 128]
+  hiddenSize: [32, 48]
+  numSteps: [1000, 2000]
+  numLayers: [2]
+
+GPS:
+  treatPolyDegree: [1]
+  outcomePolyDegree: [2]
+
+DRNet:
+  learningRate: [0.01, 0.05]
+  batchSize: [64, 128]
+  hiddenSize: [32, 48]
+  numSteps: [1000, 2000]
+  numLayers: [2]
+  numHeads: [10]
+
+VCNet:
+  learningRate: [0.01]
+  batchSize: [500]
+  hiddenSize: [50]
+  numEpochs: [400]
+  numGrid: [10]
+  knots: [[0.33, 0.66]]
+  degree: [2]
+  targetReg: [True]

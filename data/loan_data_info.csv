@@ -1,0 +1,9 @@
+Variable_Name,Variable_Type,Desc
+ID,id,Identifier
+y,target,Loan acceptance
+rate,dosage,Bid
+v1,float,Variable 1
+v2,int,Variable 2
+v3,cat,Variable 3
+v4,int,Variable 4
+v5,float,Variable 5
